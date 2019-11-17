@@ -136,10 +136,14 @@
                 subreddit2: 'depression',
                 limit: 200,
                 loading: false,
-                modelCreated: false
+                loading2: false,
+                modelCreated: false,
+                text: 'sunshine'
             };
             this.apiClient = new APIClient();
             this.subredditHandleChange = this.subredditHandleChange.bind(this);
+            this.subreddit2HandleChange = this.subreddit2HandleChange.bind(this);
+            this.textHandleChange = this.textHandleChange.bind(this);
             this.limitHandleChange = this.limitHandleChange.bind(this);
             this.handleSubmit = this.handleSubmit.bind(this);
         }
@@ -181,16 +185,27 @@
             this.setState({limit: event.target.value});
         }
 
+        handleChange() {
+
+        }
+
+        textHandleChange(event) {
+            this.setState({text: event.target.value});
+        }
+
         render() {
-            const loading = this.state.loading;
+            const loading = this.state.loadingModel;
+            const loading2 = this.state.loading2;
             const modelCreated = this.state.modelCreated;
             return (
                 <div>
                     <nav className="navbar navbar-expand-lg">
-                        <h2 className="navbar-brand navbar-dark ">REDDISPLIT</h2>
+                        <h2 className="navbar-brand navbar-dark ">ReddiSplit</h2>
                     </nav>
                     <div className="col-lg-5">
-                        <form onSubmit={this.handleSubmit}>
+                        <form onSubmit={this.handleSubmit}
+                              onChange={this.handleChange()}
+                        >
                             <fieldset>
                                 <div className="form-group row">
                                     <label className="control-label col-form-label col-form-label-lg">
@@ -203,7 +218,7 @@
                                                            value={this.state.subreddit}
                                                            className="form-control-lg field"
                                                            onChange={this.subredditHandleChange}
-                                                           placeholder="goodfeelings"/>
+                                                           placeholder="Enter subreddit 1 here..."/>
                                                 </div>
                                             </div>
                                         </div>
@@ -220,7 +235,7 @@
                                                            value={this.state.subreddit2}
                                                            className="form-control-lg field"
                                                            onChange={this.subreddit2HandleChange}
-                                                           placeholder="depression"/>
+                                                           placeholder="Enter subreddit 2 here..."/>
                                                 </div>
                                             </div>
                                         </div>
@@ -242,10 +257,12 @@
                                 {
                                     modelCreated ?
                                         <div className="form-group row">
-                                            <input className="btn btn-lg btn-block btn-success" value="Model Created"/>
+                                            <div
+                                                className="btn btn-lg btn-block btn-success"
+                                                >Model created.</div>
                                         </div>
                                         :
-                                        loading ?
+                                        loading2 ?
                                             <div className="form-group row">
                                                 <div className="btn btn-lg btn-block btn-primary">
                                                     <span className="spinner-border spinner-border-sm"></span>
@@ -256,88 +273,48 @@
                                             <div className="form-group row">
                                                 <input className="btn btn-lg btn-block btn-primary" type="submit"
                                                        value="Train"
+                                                       onChange={this.handleChange()}
                                                        onSubmit={this.handleSubmit}/>
                                             </div>
                                 }
                             </fieldset>
                         </form>
                     </div>
-                    <ul>
-                    </ul>
-                </div>
-            )
-        }
 
-    }
-
-    class Predictor extends React.Component {
-
-        constructor() {
-            super();
-            this.state = {
-                loading: false,
-                text: ""
-            };
-            this.apiClient = new APIClient();
-            this.handleSubmit = this.handleSubmit.bind(this);
-        }
-
-        async componentDidMount() {
-        }
-
-        async handleSubmit(event) {
-            console.log("classify button post submitted");
-            this.setState({loading: true}, () => {
-
-            });
-            event.preventDefault();
-        }
-
-
-        render() {
-            const loading = this.state.loading;
-            return (
-                <div>
-                    <div className="col-lg-5">
-                        <form onSubmit={this.handleSubmit}>
-                            <fieldset>
-                                <div className="form-group row">
-                                    <label className="control-label col-form-label col-form-label-lg">
-                                        Reddit post text:
-                                        <div className="form-group">
-                                            <div className="input-group mb-3">
-                                                <div className="input-group-prepend">
-                                                    <input type="text"
-                                                           minLength="100"
-                                                           value={this.state.subreddit}
-                                                           className="form-control-lg field"
-                                                           onChange={this.subredditHandleChange}
-                                                           placeholder="Enter text here"/>
-                                                </div>
-                                            </div>
+                    <form
+                        onChange={this.handleChange()}
+                        onSubmit={this.handleSubmit}>
+                        <fieldset>
+                            <label className="control-label col-form-label col-form-label-lg">
+                                Reddit post text:
+                                <div className="form-group">
+                                    <div className="input-group mb-3">
+                                        <div className="input-group-prepend">
+                                            <input type="text"
+                                                   minLength="100"
+                                                   className="form-control-lg field"
+                                                   onChange={this.textHandleChange}
+                                                   placeholder="Enter text here"/>
                                         </div>
-                                    </label>
+                                    </div>
                                 </div>
-                                {loading ?
-                                    <div class="d-flex justify-content-center">
-                                        <div class="spinner-border" role="status">
-                                            <span class="sr-only">Loading...</span>
-                                        </div>
+                            </label>
+                            {loading ?
+                                <div className="d-flex justify-content-center">
+                                    <div className="spinner-border" role="status">
+                                        <span className="sr-only">Loading...</span>
                                     </div>
-                                    :
-                                    <div className="form-group row">
-                                        <input className="btn btn-lg btn-block btn-primary" type="submit"
-                                               value="Classify Post"
-                                               onSubmit={this.handleSubmit}/>
-                                    </div>
+                                </div>
+                                :
+                                <div className="form-group">
+                                    <input className="btn btn-lg btn-block btn-primary" type="submit"
+                                           value="Submit Post"
+                                           onSubmit={this.handleSubmit}/>
+                                </div>
 
-                                }
-                            </fieldset>
-                        </form>
-                    </div>
-                    <ul>
-
-                    </ul>
+                            }
+                        </fieldset>
+                    </form>
                 </div>
             )
         }
@@ -348,12 +325,6 @@
         <Training/>
         ,
         document.getElementById('content')
-    );
-
-    ReactDOM.render(
-        <Predictor/>
-        ,
-        document.getElementById('content2')
     );
 
 
