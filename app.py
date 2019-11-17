@@ -9,6 +9,8 @@ import logging
 import warnings
 import numpy as np
 import pickle
+import traceback
+import smart_open
 from flask_cors import CORS
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
@@ -61,18 +63,25 @@ def bigrams(words, bi_min=15, tri_min=10):
 def fetch_posts(subreddit, subreddit2, num_posts):
   subreddit = reddit.subreddit(subreddit)
   # Create Pandas dataframe from list of dictionaries
+  counter = 0
   posts = []
-  for submission in subreddit.new(limit=num_posts):
+  for submission in subreddit.new(limit=num_posts * 2):
     if not submission.stickied and submission.selftext:
+      counter = counter + 1
       post = {'title': submission.title, 'body': submission.selftext, 'aorb': 1}
       posts.append(post)
+  print(counter)
+  counter2 = 0
 
+  posts2 = []
   subreddit = reddit.subreddit(subreddit2)
-  for submission in subreddit.new(limit=num_posts):
-    if not submission.stickied and submission.selftext:
+  for submission in subreddit.new(limit=num_posts * 2):
+    if not submission.stickied and submission.selftext and counter2 < counter:
+      counter2 = counter2 + 1
       post = {'title': submission.title, 'body': submission.selftext, 'aorb': 0}
       posts.append(post)
 
+  print(counter)
   print(posts)
   df = pd.DataFrame(posts)
   return df, posts
@@ -80,9 +89,13 @@ def fetch_posts(subreddit, subreddit2, num_posts):
 
 def get_corpus(df):
   df['body'] = strip_newline(df.body)
+  print(df['body'])
   words = list(sent_to_words(df.body))
+  # print(words)
   words = remove_stopwords(words)
+  # print(words)
   bigram_model = bigrams(words)
+  # print(bigram_model)
   # Get a list of lists where each list represents a post and the strings in each list are a mix of unigrams and bigrams
   bigram = [bigram_model[post] for post in words]
   # Mapping from word IDs to words
@@ -159,40 +172,82 @@ def train():
   args = request.args.to_dict()
   print(args)
   try:
-    df, posts = fetch_posts(args.get('subreddit'), args.get('subreddit2'),int(args.get('limit')))
+    df, posts = fetch_posts(args.get('subreddit'), args.get('subreddit2'), int(args.get('limit')))
     train_corpus4, train_id2word4, bigram_train4 = get_corpus(df)
-    print(train_corpus4)
-    print(train_id2word4)
+    # print(train_corpus4)
+    # print(train_id2word4)
     lda_train4 = topic_model(train_corpus4, train_id2word4)
     train_vecs = train_vectors(df, train_corpus4, lda_train4)
     X = np.array(train_vecs)
     y = np.array(df.aorb)
-    print(X)
-    print(y)
+    # print(X)
+    # print(y)
     with open('train_corpus4.pkl', 'wb') as f:
       pickle.dump(train_corpus4, f)
     with open('train_id2word4.pkl', 'wb') as f:
       pickle.dump(train_id2word4, f)
     with open('bigram_train4.pkl', 'wb') as f:
       pickle.dump(bigram_train4, f)
+    ss = StandardScaler()
+    X = ss.fit_transform(X)
+    lr = LogisticRegression(
+      class_weight='balanced',
+      solver='newton-cg',
+      fit_intercept=True
+    ).fit(X, y)
+    with open('classifier.pkl', 'wb') as f:
+      pickle.dump(lr, f)
     result = jsonify(results=posts)
   except:
     result = 'praw subreddit exception'
     print(result)
+    traceback.print_exc()
     # abort("Subreddit not found or insufficient number of posts", 300)
   return result
 
 
-@app.route('/predict/')
+@app.route('/predict/', methods=['POST'])
 def predict():
-  args = request.args.to_dict()
-  print(args)
+  print(request.form)
+  text = request.form.get('text')
   try:
+    df = pd.DataFrame(columns=['body'])
+    df.loc[0] = {'body': text}
+    # We only need the bigram_train5 but we are using the the earlier defined function so we ignore the first 2
+    # returned values
+    _, _, bigram_test = get_corpus(df)
+    # print(bigram_test)
+    lda_train4 = gensim.models.ldamulticore.LdaMulticore.load('lda_train4.model')
+    with open('train_id2word4.pkl', 'rb') as f:
+      train_id2word4 = pickle.load(f)
 
-    result = jsonify(results='')
+    # Use training dictionary on the new words
+    test_corpus = [train_id2word4.doc2bow(text) for text in bigram_test]
+
+    # print(test_corpus)
+    test_vecs = []
+    for i in range(len(df)):
+      top_topics = lda_train4.get_document_topics(test_corpus[i], minimum_probability=0.0)
+      topic_vec = [top_topics[i][1] for i in range(topicnum)]
+      topic_vec.extend([len(df.iloc[i].body)])
+      test_vecs.append(topic_vec)
+
+    with open('classifier.pkl', 'rb') as f:
+      lr = pickle.load(f)
+
+    X = np.array(test_vecs)
+    # print(X)
+    ss = StandardScaler()
+    X = ss.fit_transform(X)
+    y_pred_lr = lr.predict(X)
+
+    print(y_pred_lr)
+    lr_ = int(y_pred_lr[0])
+    result = jsonify(results=lr_)
   except:
-    result = 'praw subreddit exception'
+    result = 'error'
     print(result)
+    traceback.print_exc()
     # abort("Subreddit not found or insufficient number of posts", 300)
   return result
 
