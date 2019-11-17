@@ -85,7 +85,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js"
         integrity="sha256-XmdRbTre/3RulhYk/cOBUMpYlaAp2Rpo/s556u0OIKk=" crossorigin="anonymous"></script>
 
-
 <script type="text/jsx">
 
     const BASE_URI = 'http://127.0.0.1:5000';
@@ -97,9 +96,6 @@
     class APIClient {
 
         train(subreddit, subreddit2, limit) {
-            {#console.log(subreddit);#}
-            {#console.log(subreddit2);#}
-            {#console.log(limit);#}
             return this.perform('get', '/train', {}, {subreddit: subreddit, subreddit2: subreddit2, limit: limit});
         }
 
@@ -154,8 +150,6 @@
                     this.apiClient.train(this.state.subreddit, this.state.subreddit2, this.state.limit).then((data) => {
                         if (data === 'undefined' || data === 'praw subreddit exception') {
                             alert('An error occurred');
-                        } else {
-                            //console.log(data);
                         }
                         this.setState({loadingModel: false, modelCreated: true});
                     });
@@ -343,7 +337,6 @@
         ,
         document.getElementById('content')
     );
-
 
 </script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
