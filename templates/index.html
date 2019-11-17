@@ -97,14 +97,10 @@
     class APIClient {
 
         train(subreddit, subreddit2, limit) {
-            {#console.log('train method');#}
-            {#console.log(client);#}
-            console.log(subreddit);
-            console.log(subreddit2);
-            console.log(limit);
+            {#console.log(subreddit);#}
+            {#console.log(subreddit2);#}
+            {#console.log(limit);#}
             return this.perform('get', '/train', {}, {subreddit: subreddit, subreddit2: subreddit2, limit: limit});
-            {#console.log(promise);#}
-            {#return promise;#}
         }
 
         predict(text) {
@@ -112,7 +108,6 @@
         }
 
         async perform(method, resource, data, params) {
-            console.log(params);
             return client({
                 method,
                 url: resource,
@@ -135,9 +130,10 @@
                 subreddit: 'goodfeelings',
                 subreddit2: 'depression',
                 limit: 200,
-                loading: false,
-                loading2: false,
+                loadingModel: false,
+                loadingPrediction: false,
                 modelCreated: false,
+                predictionCreated: false,
                 text: 'sunshine'
             };
             this.apiClient = new APIClient();
@@ -145,32 +141,49 @@
             this.subreddit2HandleChange = this.subreddit2HandleChange.bind(this);
             this.textHandleChange = this.textHandleChange.bind(this);
             this.limitHandleChange = this.limitHandleChange.bind(this);
-            this.handleSubmit = this.handleSubmit.bind(this);
+            this.handleGetModel = this.handleGetModel.bind(this);
+            this.handleGetPrediction = this.handleGetPrediction.bind(this);
         }
 
         async componentDidMount() {
         }
 
-        async handleSubmit(event) {
-            this.setState({loading: true}, () => {
+        async handleGetModel(event) {
+            this.setState({loadingModel: true}, () => {
                 try {
                     this.apiClient.train(this.state.subreddit, this.state.subreddit2, this.state.limit).then((data) => {
                         if (data === 'undefined' || data === 'praw subreddit exception') {
                             alert('An error occurred');
                         } else {
-                            console.log(data);
+                            //console.log(data);
                         }
-                        this.setState({loading: false, modelCreated: true});
+                        this.setState({loadingModel: false, modelCreated: true});
                     });
                 } catch (e) {
-                    console.log('oof');
                     console.log(e);
-                    this.setState({loading: false});
+                    this.setState({loadingModel: false});
                 }
-                {#console.log(result);#}
             });
             event.preventDefault();
+        }
 
+        async handleGetPrediction(event) {
+            this.setState({loadingPrediction: true}, () => {
+                try {
+                    this.apiClient.predict(this.state.text).then((data) => {
+                        if (data === 'undefined' || data === 'praw subreddit exception') {
+                            alert('An error occurred');
+                        } else {
+                            console.log(data);
+                        }
+                        this.setState({loadingPrediction: false, predictionCreated: true});
+                    });
+                } catch (e) {
+                    console.log(e);
+                    this.setState({loadingPrediction: false});
+                }
+            });
+            event.preventDefault();
         }
 
         subredditHandleChange(event) {
@@ -185,27 +198,22 @@
             this.setState({limit: event.target.value});
         }
 
-        handleChange() {
-
-        }
-
         textHandleChange(event) {
             this.setState({text: event.target.value});
         }
 
         render() {
-            const loading = this.state.loadingModel;
-            const loading2 = this.state.loading2;
+            const loadingModel = this.state.loadingModel;
+            const loadingPrediction = this.state.loadingPrediction;
             const modelCreated = this.state.modelCreated;
+            const predictionCreated = this.state.predictionCreated;
             return (
                 <div>
                     <nav className="navbar navbar-expand-lg">
                         <h2 className="navbar-brand navbar-dark ">ReddiSplit</h2>
                     </nav>
                     <div className="col-lg-5">
-                        <form onSubmit={this.handleSubmit}
-                              onChange={this.handleChange()}
-                        >
+                        <form onSubmit={this.handleGetModel}>
                             <fieldset>
                                 <div className="form-group row">
                                     <label className="control-label col-form-label col-form-label-lg">
@@ -251,7 +259,7 @@
                                                value={this.state.limit}
                                                className="form-control-lg field"
                                                onChange={this.limitHandleChange}
-                                               placeholder="300"/>
+                                               placeholder="Number of posts to analyze..."/>
                                     </label>
                                 </div>
                                 {
@@ -259,22 +267,22 @@
                                         <div className="form-group row">
                                             <div
                                                 className="btn btn-lg btn-block btn-success"
-                                                >Model created.</div>
+                                            >Model created.
+                                            </div>
                                         </div>
                                         :
-                                        loading2 ?
+                                        loadingModel ?
                                             <div className="form-group row">
                                                 <div className="btn btn-lg btn-block btn-primary">
                                                     <span className="spinner-border spinner-border-sm"></span>
-                                                    Loading...
+                                                    &nbsp;Loading...
                                                 </div>
                                             </div>
                                             :
                                             <div className="form-group row">
                                                 <input className="btn btn-lg btn-block btn-primary" type="submit"
                                                        value="Train"
-                                                       onChange={this.handleChange()}
-                                                       onSubmit={this.handleSubmit}/>
+                                                       onSubmit={this.handleGetModel}/>
                                             </div>
                                 }
                             </fieldset>
@@ -282,8 +290,7 @@
                     </div>
 
                     <form
-                        onChange={this.handleChange()}
-                        onSubmit={this.handleSubmit}>
+                        onSubmit={this.handleGetPrediction}>
                         <fieldset>
                             <label className="control-label col-form-label col-form-label-lg">
                                 Reddit post text:
@@ -292,6 +299,7 @@
                                         <div className="input-group-prepend">
                                             <input type="text"
                                                    minLength="100"
+                                                   size="100"
                                                    className="form-control-lg field"
                                                    onChange={this.textHandleChange}
                                                    placeholder="Enter text here"/>
@@ -299,19 +307,28 @@
                                     </div>
                                 </div>
                             </label>
-                            {loading ?
-                                <div className="d-flex justify-content-center">
-                                    <div className="spinner-border" role="status">
-                                        <span className="sr-only">Loading...</span>
+                            {
+                                predictionCreated ?
+                                    <div className="form-group row">
+                                        <div
+                                            className="btn btn-lg btn-block btn-success"
+                                        >Prediction received.
+                                        </div>
                                     </div>
-                                </div>
-                                :
-                                <div className="form-group">
-                                    <input className="btn btn-lg btn-block btn-primary" type="submit"
-                                           value="Submit Post"
-                                           onSubmit={this.handleSubmit}/>
-                                </div>
-
+                                    :
+                                    loadingPrediction ?
+                                        <div className="form-group row">
+                                            <div className="btn btn-lg btn-block btn-primary">
+                                                <span className="spinner-border spinner-border-sm"></span>
+                                                &nbsp;Loading...
+                                            </div>
+                                        </div>
+                                        :
+                                        <div className="form-group row">
+                                            <input className="btn btn-lg btn-block btn-primary" type="submit"
+                                                   value="Get Prediction"
+                                                   onSubmit={this.handleGetPrediction}/>
+                                        </div>
                             }
                         </fieldset>
                     </form>
