@@ -208,7 +208,10 @@ def train():
 
 @app.route('/predict/', methods=['POST'])
 def predict():
+  x = request
   print(request.form)
+  content = request.get_json(silent=True)
+  print(content)
   text = request.form.get('text')
   try:
     df = pd.DataFrame(columns=['body'])
