@@ -1,2 +1,8 @@
 # Project exclude paths
 /venv/
+*.pkl
+*.model
+*.log
+*.state
+*.npy
+/.idea
