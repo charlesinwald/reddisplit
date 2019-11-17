@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>REDDISPLIT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.3.1/lux/bootstrap.min.css"
+        integrity="sha256-2AE13SXoJY6p0WSPAlYEZpalYyQ1NiipAwSt3s60n8M=" crossorigin="anonymous"/>
+    {#  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"#}
+    {#        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">#}
+  <style>
+    .field {
+      width: 100%;
+      border-radius: 4px;
+      position: relative;
+      background-color: rgba(255, 255, 255, 0.3);
+      transition: 0.3s all;
+    }
+
+    .field:hover {
+      background-color: rgba(255, 255, 255, 0.45);
+      box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.05);
+    }
+
+    .field.focussed input {
+      padding: 24px 16px 8px 16px;
+    }
+
+    .field.focussed input + label {
+      top: 4px;
+      opacity: 1;
+    }
+
+    .field.locked {
+      pointer-events: none;
+    }
+
+    .field input {
+      width: 100%;
+      position: relative;
+      padding: 0px 16px;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Gotham SSm A', 'Gotham SSm B', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: normal;
+      background-color: transparent;
+      color: #282828;
+      outline: none;
+      box-shadow: 0px 4px 20px 0px transparent;
+      transition: 0.3s background-color ease-in-out, 0.3s box-shadow ease-in-out, 0.1s padding ease-in-out;
+      -webkit-appearance: none;
+    }
+
+    .field input::-webkit-input-placeholder {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .field input::-moz-placeholder {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .field input:-ms-input-placeholder {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .field input:-moz-placeholder {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div id="content"></div>
+</div>
+<!-- scripts -->
+<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js"
+        integrity="sha256-XmdRbTre/3RulhYk/cOBUMpYlaAp2Rpo/s556u0OIKk=" crossorigin="anonymous"></script>
+
+
+<script type="text/jsx">
+
+    const BASE_URI = 'http://127.0.0.1:5000';
+    const client = axios.create({
+        baseURL: BASE_URI,
+        json: true
+    });
+
+    class APIClient {
+
+        train(subreddit, subreddit2, limit) {
+            {#console.log('train method');#}
+            {#console.log(client);#}
+            console.log(subreddit);
+            console.log(subreddit2);
+            console.log(limit);
+            return this.perform('get', '/train', {}, {subreddit: subreddit, subreddit2: subreddit2, limit: limit});
+            {#console.log(promise);#}
+            {#return promise;#}
+        }
+
+        async perform(method, resource, data, params) {
+            console.log(params);
+            return client({
+                method,
+                url: resource,
+                data,
+                headers: {
+                    {#'Access-Control-Allow-Origin': '*'#}
+                },
+                params: params
+            }).then(resp => {
+                return resp.data ? resp.data : [];
+            })
+        }
+    }
+
+
+    class Training extends React.Component {
+
+        constructor() {
+            super();
+            this.state = {
+                subreddit: 'goodfeelings',
+                subreddit2: 'depression',
+                limit: 200,
+                loading: false
+            };
+            this.apiClient = new APIClient();
+            this.subredditHandleChange = this.subredditHandleChange.bind(this);
+            this.limitHandleChange = this.limitHandleChange.bind(this);
+            this.handleSubmit = this.handleSubmit.bind(this);
+        }
+
+        async componentDidMount() {
+        }
+
+        async handleSubmit(event) {
+            this.setState({loading: true}, () => {
+                try {
+                    this.apiClient.train(this.state.subreddit, this.state.subreddit2, this.state.limit).then((data) => {
+                        if (data === 'undefined' || data === 'praw subreddit exception') {
+                            alert('An error occurred');
+                        } else {
+                            console.log(data);
+                        }
+                        this.setState({loading: false});
+                    });
+                } catch (e) {
+                    console.log('oof');
+                    console.log(e);
+                    this.setState({loading: false});
+                }
+                {#console.log(result);#}
+            });
+            event.preventDefault();
+        }
+
+        subredditHandleChange(event) {
+            this.setState({subreddit: event.target.value});
+        }
+
+        subreddit2HandleChange(event) {
+            this.setState({subreddit2: event.target.value});
+        }
+        limitHandleChange(event) {
+            this.setState({limit: event.target.value});
+        }
+
+
+        render() {
+            const loading = this.state.loading;
+            return (
+                <div>
+                    <nav className="navbar navbar-expand-lg">
+                        <h2 className="navbar-brand navbar-dark ">REDDISPLIT</h2>
+                    </nav>
+                    <div className="col-lg-5">
+                        <form onSubmit={this.handleSubmit}>
+                            <fieldset>
+                                <div className="form-group row">
+                                    <label className="control-label col-form-label col-form-label-lg">
+                                        Subreddit:
+                                        <div className="form-group">
+                                            <div className="input-group mb-3">
+                                                <div className="input-group-prepend">
+                                                    <span className="input-group-text">/r/</span>
+                                                    <input type="text"
+                                                           value={this.state.subreddit}
+                                                           className="form-control-lg field"
+                                                           onChange={this.subredditHandleChange}
+                                                           placeholder="goodfeelings"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                              <div className="form-group row">
+                                    <label className="control-label col-form-label col-form-label-lg">
+                                        Subreddit:
+                                        <div className="form-group">
+                                            <div className="input-group mb-3">
+                                                <div className="input-group-prepend">
+                                                    <span className="input-group-text">/r/</span>
+                                                    <input type="text"
+                                                           value={this.state.subreddit2}
+                                                           className="form-control-lg field"
+                                                           onChange={this.subreddit2HandleChange}
+                                                           placeholder="depression"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div className="form-group row">
+                                    <label className="control-label col-form-label col-form-label-lg">
+                                        Number of Posts:
+                                        <input type="number" step="1" pattern="\d+"
+                                               value={this.state.limit}
+                                               className="form-control-lg field"
+                                               onChange={this.limitHandleChange}
+                                               placeholder="300"/>
+                                    </label>
+                                </div>
+                                {loading ?
+                                    <div class="d-flex justify-content-center">
+                                        <div class="spinner-border" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                    </div>
+                                    :
+                                    <div className="form-group row">
+                                        <input className="btn btn-lg btn-block btn-primary" type="submit" value="Train"
+                                               onSubmit={this.handleSubmit}/>
+                                    </div>
+
+                                }
+                            </fieldset>
+                        </form>
+                    </div>
+                    <ul>
+
+                    </ul>
+                </div>
+            )
+        }
+
+    }
+
+    ReactDOM.render(
+        <Training/>
+        ,
+        document.getElementById('content')
+    );
+
+
+</script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"
+        integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ"
+        crossorigin="anonymous"></script>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
+        integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm"
+        crossorigin="anonymous"></script>
+</body>
+</html>
