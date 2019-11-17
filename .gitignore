@@ -4,5 +4,6 @@
 *.model
 *.log
 *.state
+*.id2word
 *.npy
 /.idea
