@@ -33,7 +33,7 @@ logging.basicConfig(filename='lda_model.log', format='%(asctime)s : %(levelname)
 nltk.download('punkt')
 stop_words = stopwords.words('english')
 
-reddit = praw.Reddit(client_id='EtqlvWK3wzZyXg', client_secret='cEJc0Rz3KW0uX38rb6jWG3YlUo0', user_agent='googlecolab')
+reddit = praw.Reddit(client_id='<CLIENT_ID>', client_secret='CLIENT_SECRET>', user_agent='googlecolab')
 
 # Global DataFrame
 topicnum = 12
